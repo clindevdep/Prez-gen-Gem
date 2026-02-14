@@ -2,3 +2,8 @@ zentiva-prez-gen.skill
 __pycache__/
 *.pyc
 Screenshots/
+screenshot_*.png
+Screenshot*.png
+*.pdf
+zentiva-prez-gen/verification/*.png
+zentiva-prez-gen/verification/*.pdf
