@@ -21,6 +21,23 @@ def remove_all_slides(prs):
         prs.part.drop_rel(rId)
     prs.slides._sldIdLst.clear()
 
+def fill_text_frame(tf, content):
+    """Fills a text frame with text or hierarchical bullets."""
+    if isinstance(content, str):
+        tf.text = content
+    elif isinstance(content, list):
+        tf.clear() # Clear the default paragraph
+        for item in content:
+            if isinstance(item, str):
+                p = tf.add_paragraph()
+                p.text = item
+                p.level = 0
+            elif isinstance(item, (list, tuple)) and len(item) >= 2:
+                text, level = item[0], item[1]
+                p = tf.add_paragraph()
+                p.text = text
+                p.level = level
+
 def create_presentation(title, slides_content, output_path, template_path=None):
     if template_path and os.path.exists(template_path):
         prs = Presentation(template_path)
@@ -35,7 +52,7 @@ def create_presentation(title, slides_content, output_path, template_path=None):
         if shape.placeholder_format.idx == 0:
             shape.text = title
         if shape.placeholder_format.idx == 1:
-            shape.text = "Strategic Market Insights v003"
+            shape.text = "Strategic Market Insights v004"
 
     # Content Slides
     for slide_data in slides_content:
@@ -49,9 +66,9 @@ def create_presentation(title, slides_content, output_path, template_path=None):
         for shape in slide.placeholders:
             ph = shape.placeholder_format
             if ph.idx == 14 and 'content' in slide_data:
-                shape.text = slide_data['content']
+                fill_text_frame(shape.text_frame, slide_data['content'])
             elif ph.idx == 15 and 'content2' in slide_data:
-                shape.text = slide_data['content2']
+                fill_text_frame(shape.text_frame, slide_data['content2'])
             elif ph.type == 18 and 'image' in slide_data: # PICTURE
                 if os.path.exists(slide_data['image']):
                     shape.insert_picture(slide_data['image'])
@@ -72,24 +89,32 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     assets_dir = os.path.join(script_dir, "..", "assets")
     
-    # Structure for v003
+    # Structure for v004 with hierarchical bullets
     slides = [
         {
             "title": "Market Overview & Growth",
-            "content": "The global biosimilars market is projected to reach ~$49B by 2026.\n\nKey growth engine for Zentiva's portfolio.",
+            "content": [
+                "The global biosimilars market is projected to reach ~$49B by 2026.",
+                ("17% Compound Annual Growth Rate (CAGR).", 1),
+                ("Primary driver: Patent cliffs of high-value biologics.", 1),
+                "Key growth engine for Zentiva's portfolio.",
+                ("Targeting oncology and immunology segments.", 1)
+            ],
             "layout": "2_Title and Content"
         },
         {
-            "title": "Dual Impact Analysis",
-            "content": "Biosimilars drive cost savings (> $30B/year) and improve system sustainability.",
-            "content2": "Patent cliffs create 'biosimilar voids' for generics to strategically fill.",
+            "title": "Strategic Impact",
+            "content": [
+                "Healthcare cost containment:",
+                ("Projected savings exceeding $30B annually.", 1),
+                ("Improved accessibility for chronic disease patients.", 1)
+            ],
+            "content2": [
+                "Market Challenges:",
+                ("Rebate walls from PBMs.", 1),
+                ("Biosimilar voids in specialized therapeutic areas.", 1)
+            ],
             "layout": "17_Title and Content" 
-        },
-        {
-            "title": "Growth Trajectory",
-            "content": "Visual representation of market expansion from 2021-2026.",
-            "image": os.path.join(assets_dir, "market_chart.png"), 
-            "layout": "10_Title and Content" 
         }
     ]
     
