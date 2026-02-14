@@ -8,4 +8,5 @@ This registry tracks all script-generated outputs in the project.
 | `biosimilars-impact-2026_v002_python.pptx` | Report | Python 3 | `zentiva-prez-gen/scripts/generate_pptx.py` | 2026-02-14 | 5-slide branded presentation. Cleared template slides. | Superseded by v003 |
 | `biosimilars-impact-2026_v003_python.pptx` | Report | Python 3 | `zentiva-prez-gen/scripts/generate_pptx.py` | 2026-02-14 | 5-slide branded presentation. placeholders + graphics. | Superseded by v004 |
 | `biosimilars-impact-2026_v004_python.pptx` | Report | Python 3 | `zentiva-prez-gen/scripts/generate_pptx.py` | 2026-02-14 | 5-slide branded presentation. Hierarchical bullets + multi-column. | Superseded by v005 |
-| `biosimilars-impact-2026_v005_python.pptx` | Report | Python 3 | `zentiva-prez-gen/scripts/generate_pptx.py` | 2026-02-14 | 5-slide branded presentation. Fixed placeholder overlap. | Active |
+| `biosimilars-impact-2026_v005_python.pptx` | Report | Python 3 | `zentiva-prez-gen/scripts/generate_pptx.py` | 2026-02-14 | 5-slide branded presentation. Fixed placeholder overlap. | Superseded by v006 |
+| `biosimilars-impact-2026_v006_python.pptx` | Report | Python 3 | `zentiva-prez-gen/scripts/generate_pptx.py` | 2026-02-14 | 5-slide branded presentation. Resolved ghosting & restored FrontPage. | Active |
