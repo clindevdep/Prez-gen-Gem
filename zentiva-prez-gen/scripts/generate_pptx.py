@@ -12,7 +12,7 @@ def get_layout_by_name(prs, name):
     for layout in prs.slide_layouts:
         if layout.name == name:
             return layout
-    return prs.slide_layouts[1]
+    return prs.slide_layouts[1] # Fallback
 
 def remove_all_slides(prs):
     """Removes all slides from the presentation object."""
@@ -21,20 +21,31 @@ def remove_all_slides(prs):
         prs.part.drop_rel(rId)
     prs.slides._sldIdLst.clear()
 
-def fill_text_frame(tf, content):
-    """Fills a text frame with text or hierarchical bullets, ensuring placeholder text is replaced."""
+def fill_text_frame(shape, content):
+    """Fills a shape's text frame, ensuring the placeholder text is completely replaced."""
+    # Setting shape.text directly is the best way to remove the "Click to add text" ghosting
     if isinstance(content, str):
-        # Directly setting .text on the placeholder is the most reliable way to clear 'Click here' text
-        tf.text = content
+        shape.text = content
     elif isinstance(content, list):
-        # To avoid ghost text, we set the text of the first paragraph first
+        # Initialize with the first item to clear the placeholder
         if not content:
+            shape.text = ""
             return
             
-        # Clear existing and start fresh
-        tf.clear()
+        first = content[0]
+        if isinstance(first, str):
+            shape.text = first
+            level = 0
+        else:
+            shape.text = first[0]
+            level = first[1]
         
-        for i, item in enumerate(content):
+        tf = shape.text_frame
+        # First paragraph is already there (from shape.text = ...), set its level
+        tf.paragraphs[0].level = level
+        
+        # Add remaining paragraphs
+        for item in content[1:]:
             p = tf.add_paragraph()
             if isinstance(item, str):
                 p.text = item
@@ -50,14 +61,17 @@ def create_presentation(title, slides_content, output_path, template_path=None):
     else:
         prs = Presentation()
 
-    # Title Slide
-    title_layout = get_layout_by_name(prs, "Title Slide")
+    # FrontPage (Using 3_Title Slide or similar based on audit)
+    # Index 12: 3_Title Slide seems to have PICTURE + TITLE + SUBTITLE
+    title_layout = get_layout_by_name(prs, "3_Title Slide")
     slide = prs.slides.add_slide(title_layout)
+    
     for shape in slide.placeholders:
-        if shape.placeholder_format.idx == 0:
+        ph = shape.placeholder_format
+        if ph.type == 3: # CENTER_TITLE
             shape.text = title
-        elif shape.placeholder_format.idx == 1:
-            shape.text = "Strategic Market Insights v005"
+        elif ph.type == 4: # SUBTITLE
+            shape.text = "Strategic Market Insights v006"
 
     # Content Slides
     for slide_data in slides_content:
@@ -73,9 +87,9 @@ def create_presentation(title, slides_content, output_path, template_path=None):
                 continue
             ph = shape.placeholder_format
             if ph.idx == 14 and 'content' in slide_data:
-                fill_text_frame(shape.text_frame, slide_data['content'])
+                fill_text_frame(shape, slide_data['content'])
             elif ph.idx == 15 and 'content2' in slide_data:
-                fill_text_frame(shape.text_frame, slide_data['content2'])
+                fill_text_frame(shape, slide_data['content2'])
             elif ph.type == 18 and 'image' in slide_data: # PICTURE
                 if os.path.exists(slide_data['image']):
                     shape.insert_picture(slide_data['image'])
