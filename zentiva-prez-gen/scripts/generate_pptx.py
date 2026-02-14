@@ -12,7 +12,7 @@ def get_layout_by_name(prs, name):
     for layout in prs.slide_layouts:
         if layout.name == name:
             return layout
-    return prs.slide_layouts[1] # Fallback
+    return prs.slide_layouts[1]
 
 def remove_all_slides(prs):
     """Removes all slides from the presentation object."""
@@ -23,30 +23,23 @@ def remove_all_slides(prs):
 
 def fill_text_frame(shape, content):
     """Fills a shape's text frame, ensuring the placeholder text is completely replaced."""
-    # Setting shape.text directly is the best way to remove the "Click to add text" ghosting
+    # To truly remove "Click to add text", we must use shape.text_frame.text = "" first
+    # Or use shape.text = content for simple text.
+    tf = shape.text_frame
+    tf.text = "" # This clears the placeholder ghost text
+    
     if isinstance(content, str):
-        shape.text = content
+        tf.paragraphs[0].text = content
     elif isinstance(content, list):
-        # Initialize with the first item to clear the placeholder
         if not content:
-            shape.text = ""
             return
             
-        first = content[0]
-        if isinstance(first, str):
-            shape.text = first
-            level = 0
-        else:
-            shape.text = first[0]
-            level = first[1]
-        
-        tf = shape.text_frame
-        # First paragraph is already there (from shape.text = ...), set its level
-        tf.paragraphs[0].level = level
-        
-        # Add remaining paragraphs
-        for item in content[1:]:
-            p = tf.add_paragraph()
+        for i, item in enumerate(content):
+            if i == 0:
+                p = tf.paragraphs[0]
+            else:
+                p = tf.add_paragraph()
+                
             if isinstance(item, str):
                 p.text = item
                 p.level = 0
@@ -54,15 +47,14 @@ def fill_text_frame(shape, content):
                 p.text = item[0]
                 p.level = item[1]
 
-def create_presentation(title, slides_content, output_path, template_path=None):
+def create_presentation(title, slides_content, output_path, template_path=None, brand_image=None):
     if template_path and os.path.exists(template_path):
         prs = Presentation(template_path)
         remove_all_slides(prs)
     else:
         prs = Presentation()
 
-    # FrontPage (Using 3_Title Slide or similar based on audit)
-    # Index 12: 3_Title Slide seems to have PICTURE + TITLE + SUBTITLE
+    # FrontPage - Index 12: 3_Title Slide (Has Picture placeholder at idx 13)
     title_layout = get_layout_by_name(prs, "3_Title Slide")
     slide = prs.slides.add_slide(title_layout)
     
@@ -71,7 +63,9 @@ def create_presentation(title, slides_content, output_path, template_path=None):
         if ph.type == 3: # CENTER_TITLE
             shape.text = title
         elif ph.type == 4: # SUBTITLE
-            shape.text = "Strategic Market Insights v006"
+            shape.text = "Strategic Market Insights v007"
+        elif ph.idx == 13 and brand_image and os.path.exists(brand_image):
+            shape.insert_picture(brand_image)
 
     # Content Slides
     for slide_data in slides_content:
@@ -86,10 +80,11 @@ def create_presentation(title, slides_content, output_path, template_path=None):
             if not shape.has_text_frame:
                 continue
             ph = shape.placeholder_format
-            if ph.idx == 14 and 'content' in slide_data:
-                fill_text_frame(shape, slide_data['content'])
-            elif ph.idx == 15 and 'content2' in slide_data:
-                fill_text_frame(shape, slide_data['content2'])
+            # Map index 13, 14, 15 which often contain the "Click to add text" ghost
+            if ph.idx in [13, 14, 15]:
+                key = 'content' if ph.idx in [13, 14] else 'content2'
+                if key in slide_data:
+                    fill_text_frame(shape, slide_data[key])
             elif ph.type == 18 and 'image' in slide_data: # PICTURE
                 if os.path.exists(slide_data['image']):
                     shape.insert_picture(slide_data['image'])
@@ -108,6 +103,15 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     assets_dir = os.path.join(script_dir, "..", "assets")
     
+    # Try to find a nice background image for the title
+    # I'll use the existing template pdf's first page if I can convert it or just a placeholder
+    title_bg = os.path.join(assets_dir, "title_bg.png")
+    if not os.path.exists(title_bg):
+        # Create a placeholder if it doesn't exist
+        from PIL import Image
+        img = Image.new('RGB', (1920, 1080), color=(0, 75, 121)) # Zentiva Blue
+        img.save(title_bg)
+
     slides = [
         {
             "title": "Market Overview & Growth",
@@ -137,4 +141,4 @@ if __name__ == "__main__":
     ]
     
     template = os.path.join(assets_dir, "Brand_v001.pptx")
-    create_presentation(title, slides, output_path, template if os.path.exists(template) else None)
+    create_presentation(title, slides, output_path, template if os.path.exists(template) else None, title_bg)
