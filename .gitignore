@@ -7,3 +7,7 @@ Screenshot*.png
 *.pdf
 zentiva-prez-gen/verification/*.png
 zentiva-prez-gen/verification/*.pdf
+.venv/
+zentiva-prez-gen/.venv/
+zentiva-prez-gen/verification/vps_test*.pptx
+zentiva-prez-gen/main.py
